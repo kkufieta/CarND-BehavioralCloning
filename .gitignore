@@ -1,0 +1,4 @@
+data/
+data.zip
+Dockerfile.gpu
+Dockerfile.cpu
