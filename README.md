@@ -31,3 +31,7 @@ Supported Systems : AWS (CPU, [GPU](doc/docker_for_aws.md)), Linux (CPU), Mac (C
 | AWS, GPU support                    | Less community support               |
 | Practice with Docker              | Have to manage images and containers |
 |                                     |                                      |
+
+## TO DO
+Explain the structure of your network and training approach.
+
