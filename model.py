@@ -1,4 +1,5 @@
 # The script used to create and train the model
+import pdb
 import time
 import cv2
 import numpy as np
@@ -9,12 +10,16 @@ import matplotlib.image as mpimg
 from sklearn.utils import shuffle
 from sklearn.preprocessing import LabelBinarizer
 from keras.models import Sequential
-from keras.layers.core import Dense, Activation, Flatten
+from keras.layers.core import Lambda, Dense, Activation, Flatten
+from keras.layers.convolutional import Convolution2D
+from keras.layers.advanced_activations import ELU
 # from sklearn.utils import shuffle
 # from scipy.misc import imresize
 
+batch_size = 2
+
 # Read in the data
-def read_data(path):
+def read_data_from_file(path):
     f = open(path)
     line = f.readline()
     # Data exploration: Find the min and max steering angle
@@ -31,63 +36,59 @@ def read_data(path):
         # Preprocess the data: Transform steering angle to float
         # The minimum and maximum of the steering angles are between -1 and 1.
         steering = float(steering)
+        # Append the steering angle to the output data array
         y_data.append(steering)
 
-        # Image path
+        # Append the image path to the input data array
         X_data_paths.append(center)
 
 # Load the data and shuffle it
-X_data_paths, y_data = read_data('data/driving_log.csv')
+X_data_paths, y_data = read_data_from_file('data_overfitting/driving_log.csv')
 X_data_paths, y_data = shuffle(X_data_paths, y_data)
 
 # Python generator to read in the images
 def generator(X_data_paths, y_data):
-    i = 0
+    j = 0
+    num_examples = len(y_data)
     while True:
-        if i >= len(y_data):
-            i = 0
-        # Crop the center image so the sky is not in it
-        image = mpimg.imread('data/' + X_data_paths[i])
-        image = image[40:-20,:]
-        # Reduce the size of the image
-        # image = imresize(image, 0.5)
-        # Resize the image to fit the NVIDIA network
-        # The required input is (66, 200, 3)
-        image = cv2.resize(image, (200, 66))
-        steering_angle = y_data[i]
-        i += 1
-        yield({'input': image}, {'output': steering_angle})
+        if j >= num_examples:
+            j = 0
+            X_data_paths, y_data = shuffle(X_data_paths, y_data)
+        for offset in range(0, num_examples, batch_size):
+            end = offset + batch_size
+            batch_x_paths, batch_y = X_data_paths[offset:end], y_data[offset:end]
 
-# Python generator to read in the data file
-def file_generator(path):
-    while True:
-        f = open(path)
-        f.readline()
-        for dataLine in f:
-            # Read in the line with data
-            dataLine = dataLine.strip()
-            center, left, right, steering, throttle, brake, speed = dataLine.split(', ')
+            batch_x = []
+            for i in range(len(batch_x_paths)):
+                # Crop the center image so the sky is not in it
+                image = mpimg.imread('data/' + batch_x_paths[i])
+                image = image[40:-20,:]
+                # Reduce the size of the image
+                # image = imresize(image, 0.5)
+                # Resize the image to fit the NVIDIA network
+                # The required input is (66, 200, 3)
+                image = cv2.resize(image, (200, 66))
+                batch_x.append(image)
 
-            center = float(center)
-            # Crop the center image so the sky is not in it
-            image = mpimg.imread('data/' + center)
-            image = image[60:,:]
-            # Reduce the size of the image
-            print(image.size)
-            smaller_image = imresize(image, 0.5)
-            print(smaller_image.size)
+            # steering_angle = y_data[i]
 
-            yield({'input': smaller_image}, {'output': steering})
-        f.close()
+            j += 1
+            # yield({'input': image}, {'output': steering_angle})
+            # pdb.set_trace()
+            batch_x = np.array(batch_x)
+            batch_y = np.array(batch_y)
+            # yield({'input': batch_x}, {'output': batch_y})
+            yield(batch_x, batch_y)
 
+# For debugging purposes
 def plot_generator():
     for x in generator(X_data_paths, y_data):
-        print(x[0]['input'])
-        print(x[1]['output'])
-        image = x[0]['input']
+        print(x[0]['input'][0])
+        print(x[1]['output'][0])
+        image = x[0]['input'][0]
         imgplot = plt.imshow(image)
         plt.show()
-        print(x[0]['input'].shape)
+        print(x[0]['input'][0].shape)
         time.sleep(1)
 
 def print_generator():
@@ -97,32 +98,52 @@ def print_generator():
         X_train = x[0]['input']
         # The shape should be (50, 160, 3)
         # The input shape to the nvidia network is (66, 200, 3)
-        print(X_train.shape)
-        # Pad images with 0s
-        print(X_train.shape)
+        print(X_train[0].shape)
         time.sleep(1)
-
 
 # print_generator()
 # plot_generator()
 
 # Network Architecture
 # Create the Sequential model
-model = Sequential()
+def nvidia_model():
+    model = Sequential()
 
-# 1st Layer - Add a flatten layer
-model.add(Flatten(input_shape=(32, 32, 3)))
+    # 1st Layer - Normalize the image to values between [0.5, 0.5]
+    model.add(Lambda(lambda x: -0.5 + x/255., input_shape=(66, 200, 3)))
+    model.add(Convolution2D(24, 5, 5, subsample=(2,2), border_mode="valid", init='he_normal'))
+    model.add(ELU())
+    model.add(Convolution2D(36, 5, 5, subsample=(2,2), border_mode="valid", init='he_normal'))
+    model.add(ELU())
+    model.add(Convolution2D(48, 5, 5, subsample=(2,2), border_mode="valid", init='he_normal'))
+    model.add(ELU())
+    model.add(Convolution2D(64, 3, 3, subsample=(1,1), border_mode="valid", init='he_normal'))
+    model.add(ELU())
+    model.add(Convolution2D(64, 3, 3, subsample=(1,1), border_mode="valid", init='he_normal'))
 
-# 2nd Layer - Add a fully connected layer
-model.add(Dense(100))
+    model.add(ELU())
+    model.add(Flatten())
+    model.add(Dense(1164, init='he_normal'))
+    model.add(ELU())
+    model.add(Dense(100, init='he_normal'))
+    model.add(ELU())
+    model.add(Dense(50, init='he_normal'))
+    model.add(ELU())
+    model.add(Dense(10, init='he_normal'))
+    model.add(ELU())
+    model.add(Dense(1, init='he_normal'))
+    return model
 
-# 3rd Layer - Add a ReLU activation layer
-model.add(Activation('relu'))
+def simple_model():
+    model = Sequential()
+    # 1st Layer - Normalize the image to values between [0.5, 0.5]
+    model.add(Lambda(lambda x: -0.5 + x/255., input_shape=(66, 200, 3)))
+    # model.add(Convolution2D(24, 5, 5, subsample=(2,2), border_mode="same", input_shape=(66, 200, 3)))
+    # model.summary()
+    model.add(Flatten())
+    model.add(Dense(1, init='he_normal'))
+    return model
 
-# 4th Layer - Add a fully connected layer
-model.add(Dense(60))
-
-# 5th Layer - Add a ReLU activation layer
-model.add(Activation('relu'))
-
-# model.fit_generator(generator('data/driving_log.csv'), samples_per_epoch=10000, nb_epoch=10)
+model = nvidia_model()
+model.compile('adam', 'mean_squared_error', ['accuracy'])
+model.fit_generator(generator(X_data_paths, y_data), samples_per_epoch=3, nb_epoch=2)
