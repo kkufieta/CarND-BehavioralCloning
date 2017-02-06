@@ -16,7 +16,13 @@ from keras.layers.advanced_activations import ELU
 # from sklearn.utils import shuffle
 # from scipy.misc import imresize
 
-batch_size = 2
+batch_size = 3
+samples_per_epoch = 24
+nb_epoch = 20
+
+# Set the font in the plots
+font = {'size'   : 7}
+plt.rc('font', **font)
 
 # Read in the data
 def read_data_from_file(path):
@@ -110,18 +116,24 @@ def nvidia_model():
     model = Sequential()
 
     # 1st Layer - Normalize the image to values between [0.5, 0.5]
-    model.add(Lambda(lambda x: -0.5 + x/255., input_shape=(66, 200, 3)))
-    model.add(Convolution2D(24, 5, 5, subsample=(2,2), border_mode="valid", init='he_normal'))
-    model.add(ELU())
-    model.add(Convolution2D(36, 5, 5, subsample=(2,2), border_mode="valid", init='he_normal'))
-    model.add(ELU())
-    model.add(Convolution2D(48, 5, 5, subsample=(2,2), border_mode="valid", init='he_normal'))
-    model.add(ELU())
-    model.add(Convolution2D(64, 3, 3, subsample=(1,1), border_mode="valid", init='he_normal'))
-    model.add(ELU())
-    model.add(Convolution2D(64, 3, 3, subsample=(1,1), border_mode="valid", init='he_normal'))
+    model.add(Lambda(lambda x: -1 + x/127.5, input_shape=(66, 200, 3)))
 
-    model.add(ELU())
+    # 3 layers of Convolution with 5x5 kernel and 2x2 stride
+    # init='he_normal': Initialization of random weights with Gaussian
+    # initialization
+    model.add(Convolution2D(24, 5, 5, activation='relu', subsample=(2,2),
+                            border_mode="valid", init='he_normal'))
+    model.add(Convolution2D(36, 5, 5, activation='relu', subsample=(2,2),
+                            border_mode="valid", init='he_normal'))
+    model.add(Convolution2D(48, 5, 5, activation='relu', subsample=(2,2),
+                            border_mode="valid", init='he_normal'))
+
+    # 2 layers of Convolution with 3x3 kernel and no stride
+    model.add(Convolution2D(64, 3, 3, activation='relu', subsample=(1,1),
+                            border_mode="valid", init='he_normal'))
+    model.add(Convolution2D(64, 3, 3, activation='relu', subsample=(1,1),
+                            border_mode="valid", init='he_normal'))
+
     model.add(Flatten())
     model.add(Dense(1164, init='he_normal'))
     model.add(ELU())
@@ -145,5 +157,36 @@ def simple_model():
     return model
 
 model = nvidia_model()
-model.compile('adam', 'mean_squared_error', ['accuracy'])
-model.fit_generator(generator(X_data_paths, y_data), samples_per_epoch=3, nb_epoch=2)
+model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_absolute_error'])
+history = model.fit_generator(generator(X_data_paths, y_data), samples_per_epoch=samples_per_epoch, nb_epoch=nb_epoch)
+
+
+X_data_paths, y_data = shuffle(X_data_paths, y_data)
+X_data = []
+for i in range(len(y_data)):
+    image = mpimg.imread('data/' + X_data_paths[i])
+    image = image[40:-20,:]
+    # Reduce the size of the image
+    # image = imresize(image, 0.5)
+    # Resize the image to fit the NVIDIA network
+    # The required input is (66, 200, 3)
+    image = cv2.resize(image, (200, 66))
+    X_data.append(image)
+
+X_data = np.array(X_data)
+y_data = np.array(y_data)
+
+# metrics = model.evaluate(X_data, y_data)
+steering_angle = model.predict(X_data, batch_size=3)
+print(steering_angle)
+
+num_examples = len(y_data)
+for i in range(num_examples):
+    plt.subplot(num_examples, 1, i+1)
+    imgplot = plt.imshow(X_data[i])
+    plt.title('Steering angle: ' + str(steering_angle[i]))
+    # plt.show()
+batch_size = 3
+samples_per_epoch = 24
+nb_epoch = 20
+plt.savefig('batch_size=' + str(batch_size) + 'samples_per_epoch=' + str(samples_per_epoch) + 'nb_epoch=' + str(nb_epoch) + '.pdf')
