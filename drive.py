@@ -14,6 +14,7 @@ from io import BytesIO
 
 from keras.models import load_model
 import cv2
+from matplotlib.colors import rgb_to_hsv
 
 sio = socketio.Server()
 app = Flask(__name__)
@@ -23,10 +24,17 @@ prev_image_array = None
 
 def resizeImage(image):
     # Crop the image: crop away the sky and the car hood
-    image = image[40:-20,:]
+    # image = image[40:-20,:]
+    image = image[60:-20,:]
     # Resize the image to fit the NVIDIA network
     # The required input is (66, 200, 3)
     image = cv2.resize(image, (200, 66))
+    return image
+
+def addChannelS(image):
+    hsv = rgb_to_hsv(image)
+    s = hsv[:,:,1]
+    image = np.dstack((image, s))
     return image
 
 @sio.on('telemetry')
@@ -43,8 +51,9 @@ def telemetry(sid, data):
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
         image_array = resizeImage(image_array)
+        # image_array = addChannelS(image_array)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
-        throttle = 0.2
+        throttle = 0.4
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
 
