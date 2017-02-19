@@ -37,6 +37,15 @@ def addChannelS(image):
     image = np.dstack((image, s))
     return image
 
+def adjustThrottle(steering_angle):
+    x = abs(steering_angle)
+    x = 1/x
+    throttle = 0.00833333 + 0.1075 * x - 0.00583333 * x * x
+    throttle = min(throttle, 0.5)
+    throttle = max(throttle, 0.2)
+    return throttle
+
+
 @sio.on('telemetry')
 def telemetry(sid, data):
     if data:
@@ -53,7 +62,8 @@ def telemetry(sid, data):
         image_array = resizeImage(image_array)
         # image_array = addChannelS(image_array)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
-        throttle = 0.4
+        throttle = 0.2
+        # throttle = adjustThrottle(steering_angle)
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
 
