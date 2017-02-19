@@ -10,13 +10,17 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./examples/placeholder.png "Model Visualization"
-[image2]: ./examples/placeholder.png "Grayscaling"
-[image3]: ./examples/placeholder_small.png "Recovery Image"
-[image4]: ./examples/placeholder_small.png "Recovery Image"
-[image5]: ./examples/placeholder_small.png "Recovery Image"
-[image6]: ./examples/placeholder_small.png "Normal Image"
-[image7]: ./examples/placeholder_small.png "Flipped Image"
+[center]: ./examples/center.jpg "Center image"
+[recover_01]: ./examples/recover_01.jpg "Recovery Image"
+[recover_02]: ./examples/recover_02.jpg "Recovery Image"
+[recover_03]: ./examples/recover_03.jpg "Recovery Image"
+[recover_04]: ./examples/recover_04.jpg "Recovery Image"
+[recover_05]: ./examples/recover_05.jpg "Recovery Image"
+[normal]: ./examples/normal.jpg "Normal Image"
+[flipped]: ./examples/flipped.jpg "Flipped Image"
+[brightness]: ./examples/brightness.jpg "Image with changed brightness"
+[cameras]: ./examples/left_center_right.png "Images from all three cameras"
+[histogram]: ./examples/histogram.png "Histogram of dataset"
 
 ## Rubric Points
 View the [rubric points](https://review.udacity.com/#!/rubrics/432/view) for project requirements. In the following I'll address how I've satisfied all requirements.
@@ -45,83 +49,86 @@ python drive.py model.h5
 
 ####3. Submission code is usable and readable
 
-The `model.ipynb` file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
+The `model.py` file contains the code for training and saving the convolution neural network. The file shows the pipeline I used for training and validating the model, and it contains comments to explain how the code works.
 
 ###Model Architecture and Training Strategy
 
 ####1. An appropriate model architecture has been employed
 
-My model consists of a convolution neural network with 3x3 filter sizes and depths between 32 and 128 (model.py lines 18-24) 
+The model is implemented in model.py, lines 513 - 555. It is implemented after the [NVIDIA end-to-end neural network](http://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf). It has 5 convolution layers with depths between 24 and 64, where the first three are made with a 5x5 filter and a stride of 2, and the last two are made with a 3x3 filter and a stride of 1. They have RELU layers in between them to introduce nonlinearity. (Lines 529 - 543).
 
-The model includes RELU layers to introduce nonlinearity (code line 20), and the data is normalized in the model using a Keras lambda layer (code line 18). 
+The model has four fully connected layers with ELU layers in between to introduce nonlinearity. I added two Dropout layers to reduce overfitting in the model. (Lines 545 - 554).
+
+The input is normalized in the model using a Keras lambda layer (Line 527).
 
 ####2. Attempts to reduce overfitting in the model
 
-The model contains dropout layers in order to reduce overfitting (model.py lines 21). 
+The model contains dropout layers in order to reduce overfitting (model.py lines 548 and 553). 
 
-The model was trained and validated on different data sets to ensure that the model was not overfitting (code line 10-16). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
+The model was trained and validated on different data sets to ensure that the model was not overfitting (code lines 565 - 574). The model was tested by running it through the simulator and ensuring that the vehicle could stay on the track.
 
 ####3. Model parameter tuning
 
-The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 25).
+The model used an adam optimizer, so the learning rate was not tuned manually (model.py line 580).
 
 ####4. Appropriate training data
 
-Training data was chosen to keep the vehicle driving on the road. I used a combination of center lane driving, recovering from the left and right sides of the road ... 
+Training data was chosen to keep the vehicle driving on the road. 
+* When using the Udacity data, I didn't know how the data was recorded. So I relied on using the left & right camera with an adjusted steering angle to introduce recovery data to the model. 
+* For the second model where I was using my own data, I recorded both data that showed the car driving as much as possible in the middle, and data that showed the car how to get from the sides of the road back to the middle. I used additionally the data from the left and right cameras, because I didn't think I recorded enough recovery data. 
 
-For details about how I created the training data, see the next section. 
+To create the data, I bought an XBOX 360 controller for $30. I brought in two of my friends who love playing video games, and they helped me record driving data. We drove the car on both tracks, in both directions, to get an equal number of left and right turn data.
+
+The interesting part was that we had vastly different driving styles. Two of us tried to drive as much as possible in the middle, whereas the third driver added aggressive driving behavior such as cutting curves. Interestingly, we could see how our driving behavior was copied from the network.
 
 ###Model Architecture and Training Strategy
 
 ####1. Solution Design Approach
 
-The overall strategy for deriving a model architecture was to ...
+The overall strategy for deriving a model architecture was to have a model that can translate street images into steering angles. The [NVIDIA end-to-end neural network](http://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf) was therefore a great starting point, because it was based on a similar scenario as our project, where images were the input, and steering angles were the output.
 
-My first step was to use a convolution neural network model similar to the ... I thought this model might be appropriate because ...
+In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. First, I tested my model on only a few images to see if it trained properly or not. I used the mean squared error for training, but the mean absolute error to manually check the performance. I found it easier to understand, since an absolute mean error of 0.1 tells you that the network actually has the tendency to estimate angles with +- 0.1 angle error. 
 
-In order to gauge how well the model was working, I split my image and steering angle data into a training and validation set. I found that my first model had a low mean squared error on the training set but a high mean squared error on the validation set. This implied that the model was overfitting. 
+No matter how many different setups I had, I never managed to get a lower validation mean absolute error than 0.1, so I used that as a threshold for a "well trained model". Later on when I'll revisit the project, I'll try to achieve lower validation errors than that. I did not have problems with overfitting, since I was using Dropout right from the start.
 
-To combat the overfitting, I modified the model so that ...
+The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track. Particular problems were the dirt road, where my first models didn't manage to see that they should turn around the corner. Other problems might be that the car tended to steer towards water on the bridge or sharp turns.
 
-Then I ... 
-
-The final step was to run the simulator to see how well the car was driving around track one. There were a few spots where the vehicle fell off the track... to improve the driving behavior in these cases, I ....
-
-At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road.
+At the end of the process, the vehicle is able to drive autonomously around the track without leaving the road, though it is driving like a drunk. I am very motivated to improve the model further and have multiple ideas on how to do that (better data processing, record new data), but that is a task for the future.
 
 ####2. Final Model Architecture
 
-The final model architecture (model.py lines 18-24) consisted of a convolution neural network with the following layers and layer sizes ...
-
-Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
-
-![alt text][image1]
+I did not change the model architecture other than that I added the dropout layers (model.py lines 513 - 555), since it was working well for me. The architecture is visualized in the paper: [NVIDIA end-to-end neural network](http://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf).
 
 ####3. Creation of the Training Set & Training Process
 
 To capture good driving behavior, I first recorded two laps on track one using center lane driving. Here is an example image of center lane driving:
 
-![alt text][image2]
+![Center image][center]
 
-I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to .... These images show what a recovery looks like starting from ... :
+I then recorded the vehicle recovering from the left side and right sides of the road back to center so that the vehicle would learn to correct itself if it came too close to the sides of the road. These images show what a recovery looks like starting from the right edge :
 
-![alt text][image3]
-![alt text][image4]
-![alt text][image5]
+![Recovery image][recover_01]
+![Recovery image][recover_02]
+![Recovery image][recover_03]
+![Recovery image][recover_04]
+![Recovery image][recover_05]
 
 Then I repeated this process on track two in order to get more data points.
 
-To augment the data sat, I also flipped images and angles thinking that this would ... For example, here is an image that has then been flipped:
+I used also the left and right cameras to add more recovery data. To teach the data to correct towards the middle, I added a steering angle of +0.25 to the left camera images, and a steering angle of -0.25 to the right camera images. Here's an example of the same scene from the perspective of all three cameras.
+![Perspective from all three cameras][cameras]
 
-![alt text][image6]
-![alt text][image7]
+To augment the data set, I also flipped images and angles thinking that this would balance the data for left and right turns, and add more examples for how to turn in curves. Furthermore, I changed the brightness in some images, to prepare the car to deal with changes in brightness or shadows. A third way to add more data with non-zero angles was to keep an image the same, but perturb the angle slightly. For example, here is an image that has then been flipped and where the darkness was changed:
 
-Etc ....
+![Original image][normal]
+![Flipped image][flipped]
+![Changed brightness][brightness]
 
-After the collection process, I had X number of data points. I then preprocessed this data by ...
+The original data set consisted of roughly 25000 images & angles. The augmented data set consisted of roughly 116000 images. In order to get the right behavior, I had to downsample the dataset to a desired distribution. A uniform distribution of the data has shown to give the best performance. Interestingly, the recorded data had naturally a uniformal distribution. It is depicted in the next image:
+![Histogram][histogram]
 
 
-I finally randomly shuffled the data set and put Y% of the data into a validation set. 
+I finally randomly shuffled the data set and put 20% of the data into a validation set. 
 
-I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was Z as evidenced by ... I used an adam optimizer so that manually training the learning rate wasn't necessary.
+I used this training data for training the model. The validation set helped determine if the model was over or under fitting. The ideal number of epochs was between 5 and 12 as evidenced by many trials with various data. I ended up with an epoch of 12. I used an adam optimizer so that manually training the learning rate wasn't necessary.
 
