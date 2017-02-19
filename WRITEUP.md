@@ -11,11 +11,11 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 
 [center]: ./examples/center.jpg "Center image"
-[recover_01]: ./examples/recover_01.jpg "Recovery Image"
-[recover_02]: ./examples/recover_02.jpg "Recovery Image"
-[recover_03]: ./examples/recover_03.jpg "Recovery Image"
-[recover_04]: ./examples/recover_04.jpg "Recovery Image"
-[recover_05]: ./examples/recover_05.jpg "Recovery Image"
+[recover_01]: ./examples/recovery_01.jpg "Recovery Image"
+[recover_02]: ./examples/recovery_02.jpg "Recovery Image"
+[recover_03]: ./examples/recovery_03.jpg "Recovery Image"
+[recover_04]: ./examples/recovery_04.jpg "Recovery Image"
+[recover_05]: ./examples/recovery_05.jpg "Recovery Image"
 [normal]: ./examples/normal.jpg "Normal Image"
 [flipped]: ./examples/flipped.jpg "Flipped Image"
 [brightness]: ./examples/brightness.jpg "Image with changed brightness"
@@ -55,11 +55,27 @@ The `model.py` file contains the code for training and saving the convolution ne
 
 ####1. An appropriate model architecture has been employed
 
-The model is implemented in model.py, lines 513 - 555. It is implemented after the [NVIDIA end-to-end neural network](http://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf). It has 5 convolution layers with depths between 24 and 64, where the first three are made with a 5x5 filter and a stride of 2, and the last two are made with a 3x3 filter and a stride of 1. They have RELU layers in between them to introduce nonlinearity. (Lines 529 - 543).
+The model is implemented in model.py (Lines 513 - 555). It is implemented after the [NVIDIA end-to-end neural network](http://images.nvidia.com/content/tegra/automotive/images/2016/solutions/pdf/end-to-end-dl-using-px.pdf) with only small modifications. It has 5 convolution layers with depths between 24 and 64, where the first three are made with a 5x5 filter and a stride of 2, and the last two are made with a 3x3 filter and a stride of 1. They have RELU layers in between them to introduce nonlinearity. (Lines 529 - 543).
 
 The model has four fully connected layers with ELU layers in between to introduce nonlinearity. I added two Dropout layers to reduce overfitting in the model. (Lines 545 - 554).
 
 The input is normalized in the model using a Keras lambda layer (Line 527).
+
+The layers are more detailed (Lines 523 - 555):
+
+1. Normalization layer, Input & Output: 66x200x3
+2. Convolution layer (5x5 filter, stride 2, activation: relu), Output: 31x98x24
+3. Convolution layer (5x5 filter, stride 2, activation: relu), Output: 14x47x36
+4. Convolution layer (5x5 filter, stride 2, activation: relu), Output: 5x22x48
+5. Convolution layer (3x3 filter, stride 1, activation: relu), Output: 3x20x64
+6. Convolution layer (3x3 filter, stride 1, activation: relu), Output: 1x18x64
+7. Flatten, Output: 1152
+9. Fully connected (activation: elu), Output: 100
+10. Dropout, p = 0.3
+11. Fully connected(activation: elu), Output: 50
+12. Fully connected(activation: elu), Output: 10
+13. Dropout, p = 0.3
+14. Fully connected, Output: 1
 
 ####2. Attempts to reduce overfitting in the model
 
