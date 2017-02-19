@@ -121,6 +121,7 @@ plt.xlabel('Steering angles')
 plt.title('Histogram of steering angles')
 plt.show()
 
+# Zoom into the steering angles timeline to get a closer look
 plt.figure(figsize=(10,5))
 plt.plot(y_data[1:2000])
 plt.ylabel('Steering angle')
@@ -164,6 +165,7 @@ def running_mean(x, N):
     cumsum = np.cumsum(np.insert(x, 0, 0)) 
     return (cumsum[N:] - cumsum[:-N]) / N 
 
+# Plot the original steering data, and the filtered steering data
 y_data_averaged = running_mean(y_data, 30)
 plt.figure(figsize=(10,10))
 plt.subplots_adjust(hspace=0.35)
@@ -217,6 +219,7 @@ plt.xlabel('Frequency [Hz]')
 plt.grid()
 plt.show()
 
+# Plot a histogram of filtered steering angles
 plt.figure(figsize=(10,5))
 plt.subplot(211)
 plt.hist(y_data, 40)
@@ -232,7 +235,7 @@ plt.title('Histogram of lowpass filtered steering angles')
 plt.show()
 
 
-# Not sure I'll use the filtered data - for now let's leave it as it is.
+# I won't use the filtered steering data for now, but I'll keep it for future reference.
 
 # ## Balance the data
 # 
@@ -258,20 +261,24 @@ def augment_brightness(image):
     image_augmented = cv2.cvtColor(image_augmented,cv2.COLOR_HSV2RGB)
     return image_augmented
 
+# Mirror the image and angle
 def mirror_image(image, angle):
     image_mirrored = cv2.flip(image,1)
     angle = -angle
     return image_mirrored, angle
 
+# Keep the image but perturb the steering angle slightly
 def perturb_angle(angle):
     new_angle = angle * (1.0 + np.random.uniform(-1, 1)/30.0)
     return new_angle
 
+# Get the histogram data, plot the histogram
 hist_y_data = np.histogram(y_data, bins=20)
 print(max(hist_y_data[0]))
 print(np.mean(hist_y_data[0]))
 print(hist_y_data)
 
+# Augment the data - this can take a while, roughly 30 min
 X_data_paths_augmented = X_data_paths
 y_data_augmented = y_data
 generated_image_counter = 1
@@ -328,6 +335,7 @@ print("done with part 2")
 
 # In[17]:
 
+# How much data do we have now? Plot the histogram
 print(len(y_data))
 print(len(X_data_paths))
 
@@ -452,6 +460,7 @@ print(len(X))
 
 # In[29]:
 
+# Trim the data to a uniform distribution, with 500 bins and a 200 max number of examples per bin 
 X, y = uniformTrimData(X, y, 500, 200)
 print('done')
 
@@ -549,7 +558,7 @@ def nvidia_model():
 # ### Compile and run the model
 # First, choose the hyperparameters. Then, compile and train the model.
 # 
-# Note: I chose a val_samples size that is much smaller than the recommended 20%. My bad.
+# Note: I chose a val_samples size that is much smaller than the recommended 20%. My bad. Though I've split the data set with a 0.2 test size.
 
 # In[33]:
 
