@@ -19,6 +19,7 @@ The goals / steps of this project are the following:
 
 The important files included are: 
 * `model.ipynb` (script used to create and train the model)
+* `model.py` (extract of the code from model.ipynb for submission)
 * `drive.py` (script to drive the car - feel free to modify this file)
 * `model.h5` (a trained Keras model based on Udacity data)
 * `hil_ram_500_200.h5` (a trained Keras model based on recorded data - named after my friends who drove the car)
