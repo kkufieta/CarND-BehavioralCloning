@@ -18,13 +18,13 @@ The goals / steps of this project are the following:
 * Summarize the results with a written report
 
 The important files included are: 
-* model.py (script used to create and train the model)
-* drive.py (script to drive the car - feel free to modify this file)
-* model.h5 (a trained Keras model based on Udacity data)
-* hil_ram_500_200.h5 (a trained Keras model based on recorded data - named after my friends who drove the car)
-* video_model_h5.mp4 (a video of the driving behavior of model.h5)
-* video_hil_ram_h5.mp4 (a video of the driving behavior of hil_ram_500_200.h5)
-* a report writeup file (included in WRITEUP.md)
+* `model.py` (script used to create and train the model)
+* `drive.py` (script to drive the car - feel free to modify this file)
+* `model.h5` (a trained Keras model based on Udacity data)
+* `hil_ram_500_200.h5` (a trained Keras model based on recorded data - named after my friends who drove the car)
+* `video_model_h5.mp4` (a video of the driving behavior of `model.h5`)
+* `video_hil_ram_h5.mp4` (a video of the driving behavior of `hil_ram_500_200.h5`)
+* `WRITEUP.md` (a report writeup)
 
 ### Dependencies
 This lab requires:
